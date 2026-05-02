@@ -19,7 +19,6 @@ namespace zlpanel {
         top_panel_(p, base_, tooltip_helper_),
         analyzer_setting_panel_(p, base),
         ui_setting_panel_(p, base_),
-        tooltip_laf_(base_), tooltip_window_(&curve_panel_),
         refresh_handler_(zlstate::PTargetRefreshSpeed::kRates[base_.getRefreshRateID()]) {
         juce::ignoreUnused(base_);
         addAndMakeVisible(curve_panel_);
@@ -28,9 +27,14 @@ namespace zlpanel {
         addChildComponent(analyzer_setting_panel_);
         addChildComponent(ui_setting_panel_);
 
-        tooltip_window_.setLookAndFeel(&tooltip_laf_);
-        tooltip_window_.setOpaque(false);
-        tooltip_window_.setBufferedToImage(true);
+        // Setup fixed tooltip label at bottom-left
+        tooltip_label_ = std::make_unique<juce::Label>();
+        tooltip_label_->setInterceptsMouseClicks(false, false);
+        tooltip_label_->setJustificationType(juce::Justification::centredLeft);
+        tooltip_label_->setMinimumHorizontalScale(1.0f);
+        tooltip_label_->setBorderSize(juce::BorderSize<int>(0));
+        tooltip_label_->setColour(juce::Label::outlineColourId, juce::Colours::transparentBlack);
+        addAndMakeVisible(tooltip_label_.get());
 
         base_.getPanelValueTree().addListener(this);
 
@@ -68,9 +72,25 @@ namespace zlpanel {
         curve_panel_.setBounds(bound);
         control_panel_.setBounds(bound.removeFromLeft(control_panel_.getIdealWidth()));
         analyzer_setting_panel_.setBounds(bound.removeFromRight(analyzer_setting_panel_.getIdealWidth()));
+
+        // Position tooltip label at bottom-left
+        if (tooltip_label_ != nullptr) {
+            const auto padding = static_cast<int>(std::round(base_.getFontSize() * 0.5f));
+            const auto labelHeight = static_cast<int>(std::ceil(base_.getFontSize() * 2.0f));
+            const auto labelWidth = static_cast<int>(std::ceil(static_cast<float>(getWidth()) * 0.45f));
+            tooltip_label_->setBounds(padding, getHeight() - labelHeight - padding,
+                                      labelWidth, labelHeight);
+            tooltip_label_->setFont(juce::FontOptions(base_.getFontSize()));
+        }
     }
 
     void MainPanel::repaintCallBack(const double time_stamp) {
+        // Update fixed tooltip every 50ms
+        if (time_stamp - last_tooltip_update_ > 0.05) {
+            last_tooltip_update_ = time_stamp;
+            updateTooltip();
+        }
+
         if (refresh_handler_.tick(time_stamp)) {
             if (time_stamp - previous_time_stamp_ > 0.1) {
                 previous_time_stamp_ = time_stamp;
@@ -106,5 +126,35 @@ namespace zlpanel {
             }
             stopTimer();
         }
+    }
+
+    void MainPanel::updateTooltip() {
+        const auto mousePos = juce::Desktop::getInstance().getMainMouseSource().getScreenPosition();
+        const auto localPos = getLocalPoint(nullptr, mousePos.toInt());
+
+        if (!reallyContains(localPos, false)) {
+            tooltip_label_->setVisible(false);
+            return;
+        }
+
+        auto* comp = getComponentAt(localPos);
+        if (comp == nullptr || comp == tooltip_label_.get()) {
+            tooltip_label_->setVisible(false);
+            return;
+        }
+
+        const auto tooltip = comp->getTooltip();
+        if (tooltip.isEmpty()) {
+            tooltip_label_->setVisible(false);
+            return;
+        }
+
+        tooltip_label_->setText(tooltip, juce::dontSendNotification);
+        tooltip_label_->setVisible(true);
+
+        // Update colours to match current theme
+        tooltip_label_->setColour(juce::Label::textColourId, base_.getTextColour());
+        tooltip_label_->setColour(juce::Label::backgroundColourId,
+                                  base_.getBackgroundColour().withAlpha(0.875f));
     }
 }

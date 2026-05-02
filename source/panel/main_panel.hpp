@@ -45,8 +45,8 @@ namespace zlpanel {
         AnalyzerSettingPanel analyzer_setting_panel_;
         UISettingPanel ui_setting_panel_;
 
-        zlgui::tooltip::TooltipLookAndFeel tooltip_laf_;
-        zlgui::tooltip::TooltipWindow tooltip_window_;
+        std::unique_ptr<juce::Label> tooltip_label_;
+        double last_tooltip_update_{-1.0};
 
         RefreshHandler refresh_handler_;
         double previous_time_stamp_{-1.0};
@@ -55,5 +55,7 @@ namespace zlpanel {
         void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier& property) override;
 
         void timerCallback() override;
+
+        void updateTooltip();
     };
 }
