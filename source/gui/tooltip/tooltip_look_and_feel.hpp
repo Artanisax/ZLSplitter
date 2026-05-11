@@ -27,19 +27,11 @@ namespace zlgui::tooltip {
             const auto w = static_cast<int>(std::ceil(tl.getWidth() + base_.getFontSize() * .25f));
             const auto h = static_cast<int>(std::ceil(tl.getHeight() + base_.getFontSize() * .25f));
             const auto padding = static_cast<int>(std::round(base_.getFontSize() * kPaddingScale));
-            if (screen_pos.x > parent_area.getCentreX() && screen_pos.y < parent_area.getCentreY()) {
-                return {
-                    parent_area.getX(),
-                    parent_area.getY(),
-                    w + 2 * padding, h + 2 * padding
-                };
-            } else {
-                return {
-                    parent_area.getRight() - w - 2 * padding,
-                    parent_area.getY(),
-                    w + 2 * padding, h + 2 * padding
-                };
-            }
+            return {
+                parent_area.getX(),
+                parent_area.getBottom() - h - 2 * padding,
+                w + 2 * padding, h + 2 * padding
+            };
         }
 
         void drawTooltip(juce::Graphics& g, const juce::String& text, const int width, const int height) override {
