@@ -19,7 +19,7 @@ namespace zlgui::tooltip {
         }
 
         juce::Rectangle<int> getTooltipBounds(const juce::String& tip_text,
-                                              const juce::Point<int> screen_pos,
+                                              const juce::Point<int> /*screen_pos*/,
                                               const juce::Rectangle<int> parent_area) override {
             const auto tl = getTipTextLayout(tip_text,
                                              static_cast<float>(parent_area.getWidth()) * .4f,

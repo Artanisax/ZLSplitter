@@ -143,7 +143,8 @@ namespace zlpanel {
             return;
         }
 
-        const auto tooltip = comp->getTooltip();
+        const auto tooltipClient = dynamic_cast<juce::TooltipClient*>(comp);
+        const auto tooltip = tooltipClient != nullptr ? tooltipClient->getTooltip() : juce::String{};
         if (tooltip.isEmpty()) {
             tooltip_label_->setVisible(false);
             return;
